@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 # HELPER FUNCTIONS
 # Remove unwanted characters (e.g. commas)
@@ -135,3 +136,74 @@ def prepare_matrices(processed_data):
         
     y = processed_data['target']
     return X, y
+
+def export_processed_data(X, y, raw_data, imputed_data, output_dir = "../data/processed"):
+    """
+    Export preprocessed dataset to:
+        - CSV (human-readable with header)
+        - NPY (machine-readable for modeling)
+    """
+    
+    # Output directory and file paths
+    os.makedirs(output_dir, exist_ok = True)
+    output_csv_path = os.path.join(output_dir, "train_preprocessed.csv")
+    output_npy_X_path = os.path.join(output_dir, "X_train.npy")
+    output_npy_y_path = os.path.join(output_dir, "y_train.npy")
+
+    # Create the final matrix
+    # Ensure X and y have compatible dimensions for stacking
+    if len(y.shape) == 1:
+        y_reshaped = y.reshape(-1, 1)
+    else:
+        y_reshaped = y
+        
+    final_matrix = np.column_stack((X, y_reshaped))
+
+    # CSV header - Numeric Part
+    header_numeric = [
+        'city_development_index',
+        'training_hours',
+        'experience',
+        'company_size',
+        'last_new_job',
+        'education_level',
+        'city_freq'
+    ]
+
+    # CSV header - One-Hot Part
+    header_raw = raw_data[0]
+    col_idx_notebook = {name: i for i, name in enumerate(header_raw)}
+    onehot_headers = []
+
+
+    for key in imputed_data.keys():
+        if "_onehot" in key:
+            original_col_name = key.replace("_onehot", "")
+            raw_col_vals = raw_data[1:, col_idx_notebook[original_col_name]]
+            raw_col_vals = np.where(raw_col_vals == '', 'Unknown', raw_col_vals)
+            labels = np.unique(raw_col_vals)
+            onehot_headers.extend([f"{original_col_name}_{lbl}" for lbl in labels])
+    full_header_list = header_numeric + onehot_headers + ["target"]
+    full_header_str = ",".join(full_header_list)
+
+    print(f"Header columns: {len(full_header_list)}")
+    print(f"Matrix columns: {final_matrix.shape[1]}")
+    assert len(full_header_list) == final_matrix.shape[1], \
+        f"Mismatch! Header: {len(full_header_list)}, Matrix: {final_matrix.shape[1]}"
+
+    # Save files
+    # CSV
+    np.savetxt(
+        output_csv_path,
+        final_matrix,
+        delimiter=",",
+        header=full_header_str,
+        fmt="%.6f",
+        comments=""
+    )
+    print(f"CSV exported to: {output_csv_path}")
+
+    # NPY
+    np.save(output_npy_X_path, X)
+    np.save(output_npy_y_path, y)
+    print(f"NPY files exported to: {output_dir}")
