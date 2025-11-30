@@ -328,3 +328,36 @@ def plot_heatmap_experience_vs_size(matrix, row_labels, col_labels):
     plt.tight_layout()
     plt.show()
 
+
+def plot_cv_metrics_box(cv_results: Dict[str, List[float]], metrics: List[str]) -> None:
+    data_to_plot = []
+    labels = []
+    means = []
+    
+    for m in metrics:
+        if m in cv_results:
+            scores = cv_results[m]
+            data_to_plot.append(scores)
+            labels.append(m.capitalize())
+            means.append(np.mean(scores))
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    box = ax.boxplot(data_to_plot, labels=labels, patch_artist=True, showmeans=True)
+    
+    colors = ['#e6f2ff', '#e6ffe6', '#fff0e6', '#f9e6ff']
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+        patch.set_edgecolor('black')
+    for median in box['medians']:
+        median.set(color='black', linewidth=1.5)
+        
+    ax.set_title("Stability Analysis: Metric Distribution across Folds", fontsize=14, pad=15)
+    ax.set_ylabel("Score Value", fontsize=12)
+    ax.grid(axis='y', linestyle='--', alpha=0.4)
+    
+    for i, mean_val in enumerate(means):
+        ax.text(i + 1, mean_val + 0.01, f'{mean_val:.3f}', 
+                ha='center', va='bottom', fontweight='bold', color='darkblue')
+    plt.tight_layout()
+    plt.show()
