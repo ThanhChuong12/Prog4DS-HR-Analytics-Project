@@ -193,17 +193,188 @@ def export_processed_data(X, y, raw_data, imputed_data, output_dir = "../data/pr
 
     # Save files
     # CSV
-    np.savetxt(
-        output_csv_path,
-        final_matrix,
-        delimiter=",",
-        header=full_header_str,
-        fmt="%.6f",
-        comments=""
-    )
+    np.savetxt(output_csv_path, final_matrix, delimiter=",", header=full_header_str, fmt="%.6f", comments="")
     print(f"CSV exported to: {output_csv_path}")
 
     # NPY
     np.save(output_npy_X_path, X)
     np.save(output_npy_y_path, y)
     print(f"NPY files exported to: {output_dir}")
+
+def percentile(sorted_list, p):
+    n = len(sorted_list)
+    if n == 0:
+        return None
+    if n == 1:
+        return sorted_list[0]
+
+    pos = (p / 100.0) * (n - 1)
+    lo = int(pos // 1)
+    hi = lo + 1
+    frac = pos - lo
+
+    if hi >= n:
+        return sorted_list[lo]
+
+    return sorted_list[lo] * (1 - frac) + sorted_list[hi] * frac
+
+
+def analyze_outliers(data, training_hours_col, city_development_index_col, target_col):
+    overall_target_ratio = np.mean(data[target_col])
+
+    # Training Hours
+    train_vals = data[training_hours_col]
+    train_clean = train_vals[~np.isnan(train_vals)].astype(float)
+    train_sorted = np.sort(train_clean)
+
+    Q1_train = percentile(train_sorted, 25)
+    Q3_train = percentile(train_sorted, 75)
+    IQR_train = Q3_train - Q1_train
+    lb_train = Q1_train - 1.5 * IQR_train
+    ub_train = Q3_train + 1.5 * IQR_train
+
+    idx_low_train = np.where(train_clean < lb_train)[0]
+    idx_high_train = np.where(train_clean > ub_train)[0]
+
+    low_target_train = data[target_col][idx_low_train] if len(idx_low_train) else np.array([])
+    high_target_train = data[target_col][idx_high_train] if len(idx_high_train) else np.array([])
+
+    print(f"Column: {training_hours_col}")
+    print(f"  Overall target=1 ratio: {overall_target_ratio:.3f}")
+    print(f"  Low outliers: {len(idx_low_train)} rows, target=1 ratio: {np.mean(low_target_train) if len(low_target_train) else np.nan:.3f}")
+    print(f"  High outliers: {len(idx_high_train)} rows, target=1 ratio: {np.mean(high_target_train) if len(high_target_train) else np.nan:.3f}")
+    print("-" * 50)
+
+    # City Development Index
+    city_vals = data[city_development_index_col]
+    city_clean = city_vals[~np.isnan(city_vals)].astype(float)
+    city_sorted = np.sort(city_clean)
+
+    Q1_city = percentile(city_sorted, 25)
+    Q3_city = percentile(city_sorted, 75)
+    IQR_city = Q3_city - Q1_city
+    lb_city = Q1_city - 1.5 * IQR_city
+    ub_city = Q3_city + 1.5 * IQR_city
+
+    idx_low_city = np.where(city_clean < lb_city)[0]
+    idx_high_city = np.where(city_clean > ub_city)[0]
+
+    low_target_city = data[target_col][idx_low_city] if len(idx_low_city) else np.array([])
+    high_target_city = data[target_col][idx_high_city] if len(idx_high_city) else np.array([])
+
+    print(f"Column: {city_development_index_col}")
+    print(f"  Overall target=1 ratio: {overall_target_ratio:.3f}")
+    print(f"  Low outliers: {len(idx_low_city)} rows, target=1 ratio: {np.mean(low_target_city) if len(low_target_city) else np.nan:.3f}")
+    print(f"  High outliers: {len(idx_high_city)} rows, target=1 ratio: {np.mean(high_target_city) if len(high_target_city) else np.nan:.3f}")
+    print("-" * 50)
+
+
+def analyze_brain_drain_hypothesis(cdi_arr, training_arr, target_arr):
+    """
+    Analyze the interaction effect between CDI and Training Hours
+    on Churn Rate to test the 'Brain Drain' hypothesis.
+
+    Args:
+        cdi_arr (np.ndarray): CDI array.
+        training_arr (np.ndarray): Training hours array.
+        target_arr (np.ndarray): Target array (0/1).
+
+    Returns:
+        tuple: (results_dict, train_threshold)
+        - results_dict: contains Churn Rate and number for each group.
+        - train_threshold: threshold value to distinguish Low/High Training.
+    """
+    valid_mask = ~np.isnan(cdi_arr) & ~np.isnan(training_arr)
+    cdi = cdi_arr[valid_mask]
+    train = training_arr[valid_mask]
+    y = target_arr[valid_mask]
+
+    train_threshold = np.median(train)
+    train_groups = np.where(train > train_threshold, 'High Training', 'Low Training')
+
+    cdi_groups = np.select(
+        [cdi < 0.65, cdi > 0.9],
+        ['Low CDI (<0.65)', 'High CDI (>0.9)'],
+        default='Medium CDI'
+    )
+
+    cdi_order = ['Low CDI (<0.65)', 'Medium CDI', 'High CDI (>0.9)']
+    train_order = ['Low Training', 'High Training']
+
+    results = {'cdi_group': [], 'train_group': [], 'churn_rate': [], 'count': []}
+
+    for c_grp in cdi_order:
+        for t_grp in train_order:
+            mask = (cdi_groups == c_grp) & (train_groups == t_grp)
+            rate = np.mean(y[mask]) * 100 if np.sum(mask) > 0 else 0
+            count = np.sum(mask)
+            results['cdi_group'].append(c_grp)
+            results['train_group'].append(t_grp)
+            results['churn_rate'].append(rate)
+            results['count'].append(count)
+
+    return results, train_threshold
+
+def bin_experience_levels(experience_arr):
+    """
+    Convert raw numeric experience (years) into semantic experience groups.
+    """
+    arr = experience_arr.astype(float).copy()
+    arr[np.isnan(arr)] = -1  # temporary value for invalid/NaN
+
+    conditions = [
+        (arr >= 0) & (arr <= 1),
+        (arr > 1) & (arr <= 5),
+        (arr > 5) & (arr <= 10),
+        (arr > 10) & (arr <= 20),
+        (arr > 20),
+    ]
+
+    choices = [
+        "0-1 Year (Junior)",
+        "1-5 Years (Mid)",
+        "5-10 Years (Senior)",
+        "10-20 Years (Expert)",
+        ">20 Years (Veteran)",
+    ]
+
+    return np.select(conditions, choices, default="Unknown")
+
+
+def compute_churn_matrix(row_arr, col_arr, target_arr, row_labels_map=None):
+    """
+    Compute churn-rate (percentage) matrix using NumPy only.
+    Equivalent to pivoting: index = row_arr, columns = col_arr.
+    """
+
+    unique_rows = np.unique(row_arr)
+    unique_rows = [r for r in unique_rows if str(r) != "Unknown"]
+
+    # Order experience groups logically
+    exp_order = [
+        "0-1 Year (Junior)",
+        "1-5 Years (Mid)",
+        "5-10 Years (Senior)",
+        "10-20 Years (Expert)",
+        ">20 Years (Veteran)",
+    ]
+    unique_cols = [grp for grp in exp_order if grp in np.unique(col_arr)]
+
+    matrix = np.zeros((len(unique_rows), len(unique_cols)))
+
+    for i, r in enumerate(unique_rows):
+        for j, c in enumerate(unique_cols):
+            mask = (row_arr == r) & (col_arr == c)
+
+            if mask.sum() > 0:
+                matrix[i, j] = target_arr[mask].mean() * 100
+            else:
+                matrix[i, j] = np.nan
+
+    # Apply label mapping if provided
+    if row_labels_map:
+        row_labels = [row_labels_map.get(r, str(r)) for r in unique_rows]
+    else:
+        row_labels = [str(r) for r in unique_rows]
+
+    return matrix, row_labels, unique_cols
