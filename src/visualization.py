@@ -165,6 +165,60 @@ class BivariatePlots:
             plt.tight_layout()
         return fig, ax
     
+    def plot_brain_drain(self, results_dict: dict, train_threshold: float, ax: Optional[plt.Axes] = None):
+        """
+        Plot the CDI x Training Hours interaction graph to test the Brain Drain hypothesis.
+        """
+        cdi_groups = results_dict['cdi_group']
+        churn_rates = results_dict['churn_rate']
+        train_groups = results_dict['train_group']
+        
+        created_ax = False
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(12, 7))
+            created_ax = True
+        else:
+            fig = ax.figure
+
+        palette = [self.viz.color_primary, self.viz.color_secondary] 
+        
+        sns.barplot(
+            x=cdi_groups,
+            y=churn_rates,
+            hue=train_groups,
+            palette=palette,
+            edgecolor='black',
+            alpha=0.9,
+            ax=ax
+        )
+        
+        # Styling
+        ax.set_title(f"Brain Drain Hypothesis: Training Impact by City Tier\n(High Training > {train_threshold:.0f} hrs)", fontsize=14)
+        ax.set_ylabel("Probability of Job Change (%)", fontsize=12)
+        ax.set_xlabel("City Development Index (CDI)", fontsize=12)
+        plt.ylim(0, max(churn_rates) * 1.15)
+        ax.legend(title="Training Intensity")
+
+        # Annotation (Highlight the difference in the Low CDI group)
+        if len(churn_rates) >= 2:
+            low_cdi_diff = churn_rates[1] - churn_rates[0] # High - Low
+            if low_cdi_diff > 0:
+                ax.annotate(
+                    f"+{low_cdi_diff:.1f}% Risk\n(Brain Drain)",
+                    xy=(-0.2, churn_rates[1]),
+                    xytext=(-0.2, churn_rates[1] + 5),
+                    ha='center',
+                    arrowprops=dict(arrowstyle='->', color='red', lw=1.5),
+                    color='red', fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="red", alpha=0.9)
+                )
+
+        for container in ax.containers:
+            ax.bar_label(container, fmt='%.1f%%', padding=3, fontsize=10)
+        if created_ax:
+            plt.tight_layout()
+        return fig, ax
+    
 class HREDA:
     def __init__(self):
         self.viz = HRVisualizer()
@@ -206,3 +260,71 @@ class HREDA:
         for col in categorical_cols:
             fig, ax = self.bivariate.plot_feature_vs_target(data[col], target, col)
             if fig: plt.show()
+
+def plot_churn_by_experience_group(experience_labels, target_arr):
+    """
+    Plot churn rate by experience group (Bar Chart).
+    """
+
+    groups = [
+        "0-1 Year (Junior)",
+        "1-5 Years (Mid)",
+        "5-10 Years (Senior)",
+        "10-20 Years (Expert)",
+        ">20 Years (Veteran)",
+    ]
+
+    rates = []
+    for grp in groups:
+        mask = experience_labels == grp
+        rate = target_arr[mask].mean() * 100 if mask.sum() else np.nan
+        rates.append(rate)
+
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(groups, rates, edgecolor="black", alpha=0.85)
+
+    plt.title("Churn Rate by Experience Level")
+    plt.ylabel("Churn Rate (%)")
+    plt.xticks(rotation=35, ha="right")
+    plt.grid(axis="y", linestyle="--", alpha=0.4)
+
+    for bar, rate in zip(bars, rates):
+        if not np.isnan(rate):
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                rate + 0.8,
+                f"{rate:.1f}%",
+                ha="center",
+                va="bottom",
+                fontsize=10,
+                fontweight="bold",
+            )
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_heatmap_experience_vs_size(matrix, row_labels, col_labels):
+    """
+    Heatmap showing churn interaction between company size and experience.
+    """
+
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(
+        matrix,
+        annot=True,
+        fmt=".1f",
+        cmap="YlOrRd",
+        xticklabels=col_labels,
+        yticklabels=row_labels,
+        linewidths=0.5,
+        cbar_kws={"label": "Churn Rate (%)"},
+    )
+
+    plt.title("Risk Heatmap: Churn Rate by Experience & Company Size")
+    plt.xlabel("Experience Level")
+    plt.ylabel("Company Size")
+    plt.xticks(rotation=40, ha="right")
+    plt.tight_layout()
+    plt.show()
+
