@@ -1,6 +1,7 @@
 # Homework 2: HR Analytics Project using NumPy
 **Môn học:** CSC17104 - Lập trình cho Khoa học Dữ liệu  
 **Sinh viên:** Lê Hà Thanh Chương - 23120195
+
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![NumPy](https://img.shields.io/badge/Library-NumPy-orange)
 ![Status](https://img.shields.io/badge/Status-Completed-green)
