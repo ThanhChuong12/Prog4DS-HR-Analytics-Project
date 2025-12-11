@@ -1,12 +1,15 @@
 # Homework 2: HR Analytics Project using NumPy
 **Môn học:** CSC17104 - Lập trình cho Khoa học Dữ liệu  
 **Sinh viên:** Lê Hà Thanh Chương - 23120195
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![NumPy](https://img.shields.io/badge/Library-NumPy-orange)
+![Status](https://img.shields.io/badge/Status-Completed-green)
 ---
 
 ## Mục lục
 
 - [Homework 2: HR Analytics Project using NumPy](#homework-2-hr-analytics-project-using-numpy)
-  - [**Sinh viên:** Lê Hà Thanh Chương - 23120195](#sinh-viên-lê-hà-thanh-chương---23120195)
+  - [](#)
   - [Mục lục](#mục-lục)
   - [Giới thiệu](#giới-thiệu)
     - [Bài toán](#bài-toán)
@@ -26,7 +29,12 @@
     - [2. Độ ổn định (Stability)](#2-độ-ổn-định-stability)
     - [3. Insight Quan trọng (Business Insight)](#3-insight-quan-trọng-business-insight)
   - [Project Structure](#project-structure)
+  - [Future Improvements](#future-improvements)
+    - [Thử nghiệm các Mô hình Phi tuyến (Non-linear Models)](#thử-nghiệm-các-mô-hình-phi-tuyến-non-linear-models)
+    - [Tối ưu hóa dựa trên Bài toán Kinh tế (Cost-Benefit Analysis)](#tối-ưu-hóa-dựa-trên-bài-toán-kinh-tế-cost-benefit-analysis)
+    - [Phân tích Nguyên nhân Cốt lõi (Explainable AI - XAI)](#phân-tích-nguyên-nhân-cốt-lõi-explainable-ai---xai)
   - [Contributors](#contributors)
+  - [Licenses](#licenses)
 
 ---
 
@@ -98,17 +106,25 @@ Mô hình dự báo có thể được tích hợp vào hệ thống quản tr�
 
 ### 2. Mô hình hóa (Logistic Regression from Scratch)
 
-- **Xây dựng Class `LogisticRegressionFromScratch`** với các tính năng nâng cao:
-  - **Hàm mất mát (Weighted Log-Loss):**  
+Chúng tôi tự xây dựng class `LogisticRegressionFromScratch` với các cải tiến kỹ thuật nhằm tối ưu hóa cho dữ liệu mất cân bằng:
+
+- **Hàm kích hoạt:** Sigmoid Function $\sigma(z) = \frac{1}{1 + e^{-z}}$.
+- **Hàm mất mát (Weighted Log-Loss with L2 Regularization):**
+  Sử dụng hàm Binary Cross Entropy có gắn trọng số cho từng lớp để phạt nặng các dự đoán sai ở lớp thiểu số, kết hợp với L2 Regularization để kiểm soát Overfitting:
 
   $$
-  J(w) = - \frac{1}{N} \sum_{i=1}^{N} \big[w_1 y^{(i)} \log(h_\theta(x^{(i)})) + w_0 (1-y^{(i)}) \log(1-h_\theta(x^{(i)}))\big] + \frac{\lambda}{2m} \sum w^2
+  J(w, b) = - \frac{1}{N} \sum_{i=1}^{N} \left[ w_{1} y^{(i)} \log(\hat{y}^{(i)}) + w_{0} (1-y^{(i)}) \log(1-\hat{y}^{(i)}) \right] + \frac{\lambda}{2} \sum_{j=1}^{M} w_j^2
   $$
 
-- **Tối ưu hóa:** Gradient Descent (Mini-batch)
-- **Kỹ thuật xử lý mất cân bằng:**
-  - **Class Weighting:** Áp dụng tỷ lệ phạt 1:4 (nhấn mạnh vào lớp thiểu số)
-  - **Threshold Tuning:** Tối ưu hóa ngưỡng quyết định dựa trên F1-Score
+  *Trong đó:*
+  - $N$: Kích thước batch.
+  - $w_1, w_0$: Trọng số lớp (Class Weights).
+  - $\lambda$: Tham số điều chuẩn (Regularization parameter `reg_lambda`).
+
+- **Thuật toán Tối ưu hóa:** **Mini-batch Gradient Descent**. Phương pháp này cân bằng giữa tốc độ tính toán của SGD và sự ổn định của Batch Gradient Descent.
+- **Kỹ thuật xử lý mất cân bằng dữ liệu:**
+  - **Class Weighting:** Thiết lập tỷ lệ trọng số **1:4** (`{'0': 1.0, '1': 4.0}`). Nghĩa là mô hình sẽ chịu mức phạt gấp 4 lần nếu dự đoán sai một nhân viên "Sẽ nghỉ việc".
+  - **Threshold Tuning:** Tối ưu hóa ngưỡng quyết định (Decision Threshold) dựa trên việc cực đại hóa **F1-Score** trên tập kiểm thử thay vì sử dụng ngưỡng mặc định 0.5.
 
 ---
 
@@ -169,16 +185,16 @@ Kết quả đánh giá trên tập Test (20%) với ngưỡng tối ưu **Thres
 
 ```text
 HR-Analytics-Project/
-├── data/
+├── data/                      # Thư mục chứa dữ liệu
 │   ├── raw/                   # Dữ liệu gốc (aug_train.csv)
 │   └── processed/             # Dữ liệu đã xử lý (.npy)
-├── notebooks/
-│   ├── 01_data_exploration.ipynb  # EDA: Brain Drain Hypothesis, Heatmaps
-│   ├── 02_preprocessing.ipynb     # Pipeline làm sạch và mã hóa dữ liệu
+├── notebooks/                     # Thư mục chứa các notebook 
+│   ├── 01_data_exploration.ipynb  # Khám phá và trực quan hoá dữ liệu
+│   ├── 02_preprocessing.ipynb     # Xử lý dữ liệu
 │   └── 03_modeling.ipynb          # Training, Tuning Threshold, Cross-Validation
 ├── src/
 │   ├── __init__.py
-│   ├── data_processing.py     # Các hàm xử lý dữ liệu (NumPy pure)
+│   ├── data_processing.py     # Các hàm xử lý dữ liệu NumPy
 │   ├── models.py              # Class LogisticRegression, Metrics, KFold tự viết
 │   └── visualization.py       # Các hàm vẽ biểu đồ chuẩn hóa (Matplotlib/Seaborn)
 ├── requirements.txt           # Danh sách thư viện
@@ -186,7 +202,29 @@ HR-Analytics-Project/
 ```
 
 ---
+## Future Improvements
+Mặc dù mô hình Logistic Regression hiện tại đã đạt được độ ổn định cao và hiệu suất khá tốt (F1 ~ 0.59), dự án vẫn còn dư địa để phát triển nhằm đạt được độ chính xác cao hơn và giá trị thực tiễn sâu sắc hơn:
+
+### Thử nghiệm các Mô hình Phi tuyến (Non-linear Models)
+* **Giới hạn của Logistic Regression:** Mô hình hiện tại giả định mối quan hệ tuyến tính giữa các biến đầu vào và log-odds của biến mục tiêu. Tuy nhiên, hành vi con người thường phức tạp hơn.
+* **Đề xuất:** Triển khai các thuật toán dựa trên cây quyết định như **Random Forest**, **XGBoost** hoặc **LightGBM**. Các mô hình này có khả năng tự động bắt được các mối quan hệ phi tuyến và tương tác phức tạp giữa các biến mà không cần feature engineering thủ công quá nhiều.
+
+### Tối ưu hóa dựa trên Bài toán Kinh tế (Cost-Benefit Analysis)
+* Hiện tại, ngưỡng quyết định (Threshold = 0.6) được chọn để tối ưu hóa F1-Score (cân bằng kỹ thuật).
+* **Hướng cải tiến:** Xây dựng **Ma trận Lợi nhuận (Profit Matrix)** dựa trên chi phí thực tế:
+    * *Chi phí giữ chân (Cost of Retention):* Chi phí bỏ ra để giữ một nhân viên (ví dụ: thưởng, training).
+    * *Chi phí thay thế (Cost of Replacement):* Chi phí tuyển dụng và đào tạo người mới nếu nhân viên cũ nghỉ việc.
+* Từ đó, tìm ra ngưỡng tối ưu để **giảm thiểu tổng chi phí tài chính** cho công ty thay vì chỉ tối ưu hóa chỉ số thống kê.
+
+### Phân tích Nguyên nhân Cốt lõi (Explainable AI - XAI)
+* Sử dụng **SHAP (SHapley Additive exPlanations)** hoặc **LIME** để giải thích dự đoán cho từng cá nhân cụ thể. Điều này giúp bộ phận HR không chỉ biết *ai* sắp nghỉ việc, mà còn biết chính xác *tại sao* (ví dụ: "Nhân viên A có nguy cơ cao chủ yếu vì họ có 15 năm kinh nghiệm nhưng vẫn làm ở công ty quá nhỏ"), từ đó đưa ra gói giải pháp giữ chân cá nhân hóa.
 
 ## Contributors
 
-Mọi thắc mắc xin liên hệ: chuongle241205@gmail.com
+* Thông tin tác giả: Lê Hà Thanh Chương
+* Phương thức liên lạc (Contact):
+    * Email: chuongle241205@gmail.com
+    * Github: https://github.com/ThanhChuong12
+
+## Licenses
+Đồ án được phân phối dưới giấy phép MIT License.

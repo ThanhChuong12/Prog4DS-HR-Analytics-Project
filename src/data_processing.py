@@ -10,10 +10,14 @@ def clean_currency_string(arr):
 def fill_missing_numerical(arr, strategy = 'median'):
     arr = arr.astype(float)
     mask_nan = np.isnan(arr)
+    if not np.any(mask_nan):
+        return arr
     if strategy == 'median':
         fill_val = np.nanmedian(arr)
     elif strategy == 'mean':
         fill_val = np.nanmean(arr)
+    elif strategy == 'constant':
+        fill_val = -1
     else:
         fill_val = 0.0
     arr[mask_nan] = fill_val
@@ -101,6 +105,7 @@ def impute_missing(data_dict):
     output = data_dict.copy()
     numeric_cols = ['city_development_index', 'training_hours', 
                     'experience', 'company_size', 'last_new_job', 'education_level']
+    
     for col in numeric_cols:
         if col in output:
             output[col] = fill_missing_numerical(output[col], strategy = 'median')

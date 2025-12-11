@@ -374,8 +374,8 @@ class KFoldCrossValidation:
                 train_idx = indices[train_mask]
                 splits.append((train_idx, test_idx))
             return splits
-
-    def evaluate(self, X, y, model_class, model_params=None, threshold=0.5, metrics=['f1_score', 'recall', 'precision']):
+    
+    def evaluate(self, X, y, model_class, model_params=None, scaler_class=None, threshold=0.5, metrics=['f1_score', 'recall', 'precision']):
         model_params = model_params or {}
         folds = self.split(X, y)
         results = {m: [] for m in metrics}
@@ -385,10 +385,14 @@ class KFoldCrossValidation:
         for fold_i, (train_idx, test_idx) in enumerate(folds):
             X_train, X_test = X[train_idx], X[test_idx]
             y_train, y_test = y[train_idx], y[test_idx]
+            if scaler_class is not None:
+                scaler = scaler_class()
+                X_train = scaler.fit_transform(X_train)
+                X_test = scaler.transform(X_test)
 
             # Initialization and Training
             model = model_class(**model_params)
-            model.fit(X_train, y_train, validation_data=None)
+            model.fit(X_train, y_train)
             
             # Predict with specified Threshold
             y_pred = model.predict(X_test, threshold=threshold)
@@ -399,6 +403,5 @@ class KFoldCrossValidation:
                     score = getattr(Metrics, m)(y_test, y_pred)
                     results[m].append(score)
             
-            # print(f"   Fold {fold_i+1}/{self.k}: F1={results['f1_score'][-1]:.4f}")
         avg = {m: {'mean': float(np.mean(results[m])), 'std': float(np.std(results[m]))} for m in metrics}
         return avg, results
