@@ -9,33 +9,30 @@
 
 ## Mục lục
 
-- [Homework 2: HR Analytics Project using NumPy](#homework-2-hr-analytics-project-using-numpy)
-  - [](#)
-  - [Mục lục](#mục-lục)
-  - [Giới thiệu](#giới-thiệu)
-    - [Bài toán](#bài-toán)
-    - [Động lực](#động-lực)
-    - [Mục tiêu cụ thể](#mục-tiêu-cụ-thể)
-    - [Ứng dụng thực tiễn](#ứng-dụng-thực-tiễn)
-  - [Dataset](#dataset)
-    - [Mô tả các features](#mô-tả-các-features)
-  - [Method](#method)
-    - [1. Xử lý Dữ liệu](#1-xử-lý-dữ-liệu)
-    - [2. Mô hình hóa (Logistic Regression from Scratch)](#2-mô-hình-hóa-logistic-regression-from-scratch)
-  - [Installation \& Setup](#installation--setup)
-    - [1. Cài đặt môi trường](#1-cài-đặt-môi-trường)
-    - [2. Chạy dự án](#2-chạy-dự-án)
-  - [Results](#results)
-    - [1. Hiệu năng Mô hình (Model Performance)](#1-hiệu-năng-mô-hình-model-performance)
-    - [2. Độ ổn định (Stability)](#2-độ-ổn-định-stability)
-    - [3. Insight Quan trọng (Business Insight)](#3-insight-quan-trọng-business-insight)
-  - [Project Structure](#project-structure)
-  - [Future Improvements](#future-improvements)
-    - [Thử nghiệm các Mô hình Phi tuyến (Non-linear Models)](#thử-nghiệm-các-mô-hình-phi-tuyến-non-linear-models)
-    - [Tối ưu hóa dựa trên Bài toán Kinh tế (Cost-Benefit Analysis)](#tối-ưu-hóa-dựa-trên-bài-toán-kinh-tế-cost-benefit-analysis)
-    - [Phân tích Nguyên nhân Cốt lõi (Explainable AI - XAI)](#phân-tích-nguyên-nhân-cốt-lõi-explainable-ai---xai)
-  - [Contributors](#contributors)
-  - [Licenses](#licenses)
+- [Giới thiệu](#giới-thiệu)
+  - [Bài toán](#bài-toán)
+  - [Động lực](#động-lực)
+  - [Mục tiêu cụ thể](#mục-tiêu-cụ-thể)
+  - [Ứng dụng thực tiễn](#ứng-dụng-thực-tiễn)
+- [Dataset](#dataset)
+  - [Mô tả các features](#mô-tả-các-features)
+- [Method](#method)
+  - [1. Xử lý Dữ liệu](#1-xử-lý-dữ-liệu)
+  - [2. Mô hình hóa (Logistic Regression from Scratch)](#2-mô-hình-hóa-logistic-regression-from-scratch)
+- [Installation \& Setup](#installation--setup)
+  - [1. Cài đặt môi trường](#1-cài-đặt-môi-trường)
+  - [2. Chạy dự án](#2-chạy-dự-án)
+- [Results](#results)
+  - [1. Hiệu năng Mô hình (Model Performance)](#1-hiệu-năng-mô-hình-model-performance)
+  - [2. Độ ổn định (Stability)](#2-độ-ổn-định-stability)
+  - [3. Insight Quan trọng (Business Insight)](#3-insight-quan-trọng-business-insight)
+- [Project Structure](#project-structure)
+- [Future Improvements](#future-improvements)
+  - [Thử nghiệm các Mô hình Phi tuyến (Non-linear Models)](#thử-nghiệm-các-mô-hình-phi-tuyến-non-linear-models)
+  - [Tối ưu hóa dựa trên Bài toán Kinh tế (Cost-Benefit Analysis)](#tối-ưu-hóa-dựa-trên-bài-toán-kinh-tế-cost-benefit-analysis)
+  - [Phân tích Nguyên nhân Cốt lõi (Explainable AI - XAI)](#phân-tích-nguyên-nhân-cốt-lõi-explainable-ai---xai)
+- [Contributors](#contributors)
+- [Licenses](#licenses)
 
 ---
 
@@ -113,9 +110,7 @@ Chúng tôi tự xây dựng class `LogisticRegressionFromScratch` với các c�
 - **Hàm mất mát (Weighted Log-Loss with L2 Regularization):**
   Sử dụng hàm Binary Cross Entropy có gắn trọng số cho từng lớp để phạt nặng các dự đoán sai ở lớp thiểu số, kết hợp với L2 Regularization để kiểm soát Overfitting:
 
-  $$
-  J(w, b) = - \frac{1}{N} \sum_{i=1}^{N} \left[ w_{1} y^{(i)} \log(\hat{y}^{(i)}) + w_{0} (1-y^{(i)}) \log(1-\hat{y}^{(i)}) \right] + \frac{\lambda}{2} \sum_{j=1}^{M} w_j^2
-  $$
+  $J(w, b) = - \frac{1}{N} \sum_{i=1}^{N} \left[ w_{1} y^{(i)} \log(\hat{y}^{(i)}) + w_{0} (1-y^{(i)}) \log(1-\hat{y}^{(i)}) \right] + \frac{\lambda}{2} \sum_{j=1}^{M} w_j^2$
 
   *Trong đó:*
   - $N$: Kích thước batch.
